@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuckiStudio</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+body { background: #121212; color: #f0f0f0; line-height: 1.6; padding-bottom: 60px; }
+
+nav {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 15px;
+    background: #1e1e1e; padding: 10px 0; position: sticky; top: 0; z-index: 999;
+}
+nav button {
+    background: #272727; border: none; padding: 10px 20px; border-radius: 8px; color: #f0f0f0; cursor: pointer;
+    transition: background 0.3s;
+}
+nav button:hover { background: #444; }
+
+.page { display: none; padding: 20px; max-width: 1000px; margin: auto; }
+.page.active { display: block; }
+
+video { width: 100%; border-radius: 12px; margin-bottom: 20px; }
+
+.projects-container { display: flex; gap: 20px; margin-top: 20px; }
+.videos-column { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.images-column { flex: 1; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+
+#imageGallery img { width: 200px; border-radius: 12px; object-fit: cover; transition: transform 0.3s; cursor: pointer; }
+#imageGallery img:hover { transform: scale(1.05); }
+
+#volumeContainer {
+    position: fixed; bottom: 20px; left: 20px; display: flex; align-items: center;
+    gap: 8px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 12px; z-index: 9999;
+}
+#volumeIcon { font-size: 18px; }
+#volumeControl { width: 120px; }
+
+#musicBtn {
+    position: fixed; bottom: 20px; right: 20px; padding: 12px 24px;
+    border: none; border-radius: 50%; background: #272727; color: #f0f0f0; cursor: pointer;
+    z-index: 9999; font-size: 18px; transition: background 0.3s, transform 0.3s;
+    display: flex; align-items: center; justify-content: center;
+}
+#musicBtn:hover { background: #444; }
+#musicBtn.playing { animation: pulse 1s infinite; }
+
+@keyframes pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 rgba(255,255,255,0.5); }
+    50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(255,255,255,0.7); }
+    100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,255,255,0.5); }
+}
+
+.hero-section {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 40px auto; max-width: 1000px; gap: 20px; flex-wrap: wrap;
+}
+.hero-text { flex: 1; color: #f0f0f0; }
+.hero-text h1 { font-size: 2.5em; margin-bottom: 10px; }
+.hero-text p { font-size: 1.2em; margin-bottom: 20px; }
+.hero-text button {
+    padding: 10px 20px; border: none; border-radius: 8px;
+    background: #272727; color: #f0f0f0; cursor: pointer;
+    transition: background 0.3s;
+}
+.hero-text button:hover { background: #444; }
+.hero-image { flex: 1; display: flex; justify-content: center; }
+.hero-image img { max-width: 100%; border-radius: 12px; object-fit: cover; }
+
+.about-container {
+    display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; max-width:1000px; margin:auto;
+    opacity:0; transform:translateY(20px); transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.page.active .about-container { opacity:1; transform:translateY(0); }
+
+.about-text { display:flex; flex-direction:column; justify-content:flex-start; }
+.about-video video { width:100%; border-radius:12px; }
+
+#lightbox {
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.9); justify-content:center; align-items:center;
+    z-index:10000; flex-direction: column; opacity: 0; transition: opacity 0.5s;
+}
+#lightbox.show { display:flex; opacity:1; }
+#lightbox img { max-width:90%; max-height:80%; border-radius:12px; margin-bottom: 20px; transition: opacity 0.5s; }
+.lightbox-btn {
+    background: rgba(255,255,255,0.2); border:none; color:#fff; font-size:24px;
+    padding:10px 20px; margin:5px; cursor:pointer; border-radius:8px; transition:background 0.3s;
+}
+.lightbox-btn:hover { background: rgba(255,255,255,0.4); }
+
+.platforms-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+}
+
+.platforms-container {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.platform {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #121212;
+    border-radius: 14px;
+    border: 1px solid #1f1f1f;
+    transition: all 0.25s ease;
+    text-decoration: none;
+}
+.platform img { width: 22px; height: 22px; }
+.platform:hover { transform: translateY(-4px) scale(1.05); }
+
+.instagram:hover { background: linear-gradient(135deg, #833ab4, #fd1d1d, #fcb045); }
+.facebook:hover { background: #1877f2; }
+.tiktok:hover { background: linear-gradient(135deg, #00f2ea, #ff0050); }
+.youtube:hover { background: #ff0000; }
+.soundcloud:hover { background: #ff5500; }
+
+.text-box { width: 100%; max-width: 420px; }
+.text-box textarea {
+    width: 100%; min-height: 120px;
+    background: #0f0f0f; color: #fff;
+    border: 1px solid #2a2a2a; border-radius: 12px;
+    padding: 12px; font-size: 15px;
+    resize: vertical; outline: none;
+}
+.text-box textarea::placeholder { color: #888; }
+
+@media(max-width:800px){
+    .hero-section { flex-direction: column; }
+    .hero-image, .hero-text { width: 100%; text-align: center; }
+    .about-container { flex-direction: column; }
+    .about-text, .about-video { width: 100%; text-align: center; }
+}
+
+@media(max-width:900px){
+    .projects-container { flex-direction: column; }
+    .images-column { justify-content: flex-start; }
+}
+
+@media(max-width:600px){
+    #imageGallery img { width: 45%; }
+    video { max-width: 100%; }
+    .platform { width: 48px; height: 48px; }
+    .platform img { width: 20px; height: 20px; }
+}
+</style>
+</head>
+<body>
+
+<audio id="bgAudio" loop>
+    <source src="Hot.mp3" type="audio/mp3">
+</audio>
+
+<nav>
+    <button onclick="showPage('home')">Főoldal</button>
+    <button onclick="showPage('about')">Rólam</button>
+    <button onclick="showPage('projects')">Projektek</button>
+    <button onclick="showPage('platforms')">Platformok</button>
+</nav>
+
+<button id="musicBtn" onclick="toggleMusic()">🎵</button>
+<div id="volumeContainer">
+    <span id="volumeIcon">🔊</span>
+    <input type="range" id="volumeControl" min="0" max="1" step="0.01">
+</div>
+
+<!-- Főoldal -->
+<div id="home" class="page active">
+    <div class="hero-section">
+        <div class="hero-text">
+            <h1 id="heroTitle">Itt a BuckiStudio – a hely, ahol a történetek életre kelnek.</h1>
+            <p id="heroDesc">„Merülj el a kreatív világomban.”</p>
+            <button onclick="changeHeroText()">Lépkedés</button>
+        </div>
+        <div class="hero-image">
+            <img id="heroImg" src="bucki.jpeg" alt="BuckiStudio kép">
+        </div>
+    </div>
+</div>
+
+<!-- Rólam -->
+<section id="about" class="page">
+    <div class="about-container" style="display: flex; flex-wrap: wrap; gap: 30px; align-items: center;">
+        <!-- Szöveg -->
+        <div class="about-text" style="flex: 1; min-width: 300px;">
+            <h1>Rólam</h1>
+            <p>
+                Egy 21 éves, pörgős arc vagyok, aki nem igazán tud megülni a seggén.
+                Imádok bulizni, élvezem az éjszakai életet, a zenét, a társaságot és azt
+                az érzést, amikor történik valami.
+                Az esti kocsikázás külön kedvencem: ilyenkor jönnek a jó beszélgetések,
+                a nevetések, meg az a szabadságérzés, amit semmi más nem ad vissza.
+            </p>
+            <p>
+                A haverok nagyon fontosak nekem, velük érzem magam igazán önmagamnak.
+                Bolondos, hülyéskedős, vicces természet vagyok, aki nem fél hülyét
+                csinálni magából, ha ezzel jobb lesz a hangulat.
+                Nem a túlkomolykodás jellemez, hanem az, hogy élvezem az életet.
+            </p>
+        </div>
+
+        <!-- Videó -->
+        <div class="about-video" style="flex: 1; min-width: 300px; position: relative; border-radius: 10px; overflow: hidden;">
+            <video id="aboutVideo" controls loop playsinline style="width: 100%; display: block;">
+                <source src="2223.mp4" type="video/mp4">
+                A böngésződ nem támogatja a videó lejátszást.
+            </video>
+        </div>
+    </div>
+</section>
+
+<style>
+    .about-video video {
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+</style>
+
+<script>
+    const video = document.getElementById("aboutVideo");
+
+    // Intersection Observer – videó csak akkor indul, ha a szekció látható
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                video.play().catch(() => {
+                    // ha az automatikus lejátszás blokkolva, a felhasználó interakciója kell
+                    console.log("Videó elindítása a felhasználótól függ.");
+                });
+                obs.unobserve(entry.target); // csak egyszer indítja el
+            }
+        });
+    }, { threshold: 0.5 }); // 50% láthatóság kell a starthoz
+
+    observer.observe(document.getElementById("about"));
+</script>
+
+
+<style>
+    /* Szép lekerekítés és árnyék a videóra */
+    .about-video video {
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+</style>
+
+<script>
+    const video = document.getElementById("aboutVideo");
+
+    function enableSound() {
+        video.muted = false;
+        video.volume = 1.0;
+        video.play();
+
+        document.removeEventListener("click", enableSound);
+        document.removeEventListener("touchstart", enableSound);
+    }
+
+    document.addEventListener("click", enableSound);
+    document.addEventListener("touchstart", enableSound);
+</script>
+
+<style>
+/* Konténer: szöveg balra, videó jobbra */
+.about-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* szöveg balra, videó jobbra */
+    flex-wrap: wrap;
+    gap: 2rem;
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Szöveg stílusa */
+.about-text {
+    flex: 1 1 500px; /* rugalmas szélesség */
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    color: #f0f0f0;
+    text-align: left;
+}
+
+.about-text h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    color: #f0f0f0;
+}
+
+.about-text p {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+/* Videó stílusa */
+.about-video {
+    flex: 1 1 500px;
+    display: flex;
+    justify-content: flex-end; /* mindig a jobb oldalra */
+}
+
+.about-video video {
+    width: 100%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+/* Mobilra optimalizálás */
+@media (max-width: 768px) {
+    .about-container {
+        flex-direction: column; /* egymás alá */
+        padding: 2rem 1rem;
+    }
+
+    .about-video {
+        justify-content: center; /* mobilon középre */
+        margin-top: 2rem;
+    }
+}
+</style>
+
+<!-- Projektek -->
+<div id="projects" class="page">
+    <h1>Projektek</h1>
+    <div class="projects-container">
+        <div class="videos-column">
+            <h2>2025</h2>
+            <video controls><source src="2005.mp4" type="video/mp4"></video>
+            <h2>2024</h2>
+            <video controls><source src="2004.mp4" type="video/mp4"></video>
+            <h2>2023</h2>
+            <video controls><source src="2003.mp4" type="video/mp4"></video>
+        </div>
+        <div class="images-column" id="imageGallery"></div>
+    </div>
+</div>
+
+<!-- Platformok -->
+<div id="platforms" class="page">
+    <div class="platforms-inner">
+        <div class="text-box">
+            <h2>Kattints ide, fedezd fel a vicces tartalmakat,és kövess be!</h2>
+        </div>
+        <div class="platforms-container">
+            <a href="https://www.instagram.com/bukkibenceee/" target="_blank" class="platform instagram">
+                <img src="1.png" alt="Instagram">
+            </a>
+            <a href="https://www.facebook.com/bence.bukki" target="_blank" class="platform facebook">
+                <img src="4.png" alt="Facebook">
+            </a>
+            <a href="https://www.tiktok.com/@.bucki05" target="_blank" class="platform tiktok">
+                <img src="2.png" alt="TikTok">
+            </a>
+            <a href="https://www.youtube.com/@Hugoo17" target="_blank" class="platform youtube">
+                <img src="7.png" alt="YouTube">
+            </a>
+            <a href="https://soundcloud.com/buekki-bence" target="_blank" class="platform soundcloud">
+                <img src="8.png" alt="SoundCloud">
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox">
+    <img id="lightboxImg" src="">
+    <div>
+        <button class="lightbox-btn" id="prevBtn">&#10094; Előző</button>
+        <button class="lightbox-btn" id="nextBtn">Következő &#10095;</button>
+    </div>
+</div>
+
+<script>
+// Audio és zene
+const audio=document.getElementById('bgAudio');
+const btn=document.getElementById('musicBtn');
+const volumeSlider=document.getElementById('volumeControl');
+const volumeIcon=document.getElementById('volumeIcon');
+let isPlaying=false;
+
+function showPage(pageId){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    const page=document.getElementById(pageId);
+    page.classList.add('active');
+
+    const aboutContainer=page.querySelector('.about-container');
+    if(aboutContainer){
+        aboutContainer.style.opacity=0; aboutContainer.style.transform='translateY(20px)';
+        setTimeout(()=>{ aboutContainer.style.opacity=1; aboutContainer.style.transform='translateY(0)'; },50);
+    }
+
+    if(pageId==='home' && !isPlaying){ 
+        audio.play().then(()=>{isPlaying=true; btn.classList.add("playing");}).catch(()=>{}); 
+    }
+}
+
+function toggleMusic(){ 
+    if(!isPlaying){ audio.play(); btn.classList.add("playing"); isPlaying=true; }
+    else{ audio.pause(); btn.classList.remove("playing"); isPlaying=false; }
+}
+
+function updateVolume(value){ 
+    audio.volume=value; 
+    localStorage.setItem("bgVolume",value); 
+    volumeIcon.textContent=value==0?"🔇":"🔊"; 
+}
+volumeSlider.addEventListener("input",()=>updateVolume(volumeSlider.value));
+
+window.addEventListener("load",()=>{
+    const saved=parseFloat(localStorage.getItem("bgVolume")??1); 
+    audio.volume=saved; 
+    volumeSlider.value=saved; 
+    volumeIcon.textContent = saved==0?"🔇":"🔊";
+
+    if(document.getElementById('home').classList.contains('active')){
+        audio.play().then(()=>{isPlaying=true; btn.classList.add("playing");}).catch(()=>{});
+    }
+
+    const aboutVideo=document.getElementById('aboutVideo');
+    if(aboutVideo){
+        aboutVideo.muted=false;
+        aboutVideo.play().catch(()=>{ aboutVideo.muted=true; aboutVideo.play(); });
+    }
+});
+
+// Hero toggle
+const originalHeroTitle=document.getElementById('heroTitle').textContent;
+const originalHeroDesc=document.getElementById('heroDesc').textContent;
+const originalHeroImg=document.getElementById('heroImg').src;
+let heroToggled=false;
+function changeHeroText(){
+    const heroImg=document.getElementById('heroImg');
+    if(!heroToggled){ 
+        document.getElementById('heroTitle').textContent="Merülj el a kreativitás világában!";
+        document.getElementById('heroDesc').textContent="Rengeteg őrült és szórakoztató projekt vár rád nálam!   Nevess egy jót, a Projektek fülben";
+        heroImg.src="bucki.jpeg"; 
+        heroToggled=true;
+    } else { 
+        document.getElementById('heroTitle').textContent=originalHeroTitle;
+        document.getElementById('heroDesc').textContent=originalHeroDesc; 
+        heroImg.src=originalHeroImg; 
+        heroToggled=false; 
+    }
+}
+
+// Lightbox
+const gallery=document.getElementById("imageGallery");
+const lightbox=document.getElementById("lightbox");
+const lightboxImg=document.getElementById("lightboxImg");
+const prevBtn=document.getElementById("prevBtn");
+const nextBtn=document.getElementById("nextBtn");
+const serverImages=["1.jpeg","2.jpg","3.jpeg","4.jpeg","5.jpeg","6.jpeg","7.jpeg","8.jpeg","9.jpeg","10.jpeg","11.jpeg","12.jpeg","13.jpeg","14.jpeg"];
+let currentIndex=0;
+
+function showLightbox(index){ 
+    currentIndex=index; 
+    lightboxImg.style.opacity=0; 
+    lightboxImg.src=serverImages[currentIndex]; 
+    lightbox.classList.add("show");
+    setTimeout(()=>{ lightboxImg.style.opacity=1; },50);
+}
+
+serverImages.forEach((src,i)=>{
+    const img=document.createElement("img"); 
+    img.src=src; 
+    img.addEventListener("click",()=>showLightbox(i)); 
+    gallery.appendChild(img); 
+});
+
+lightbox.addEventListener("click",(e)=>{ if(e.target===lightbox) lightbox.classList.remove("show"); });
+
+function showPrev(){ 
+    currentIndex=(currentIndex-1+serverImages.length)%serverImages.length; 
+    lightboxImg.style.opacity=0; 
+    setTimeout(()=>{ lightboxImg.src=serverImages[currentIndex]; lightboxImg.style.opacity=1; },200); 
+}
+
+function showNext(){ 
+    currentIndex=(currentIndex+1)%serverImages.length; 
+    lightboxImg.style.opacity=0; 
+    setTimeout(()=>{ lightboxImg.src=serverImages[currentIndex]; lightboxImg.style.opacity=1; },200); 
+}
+
+prevBtn.addEventListener("click",e=>{ e.stopPropagation(); showPrev(); });
+nextBtn.addEventListener("click",e=>{ e.stopPropagation(); showNext(); });
+
+window.addEventListener("keydown",e=>{
+    if(!lightbox.classList.contains("show")) return;
+    if(e.key==="ArrowLeft") showPrev(); 
+    if(e.key==="ArrowRight") showNext(); 
+    if(e.key==="Escape") lightbox.classList.remove("show"); 
+});
+</script>
+
+</body>
+</html>
